@@ -18,12 +18,15 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                sh 'docker stop node-app || true' // stop command
-                sh 'docker rm node-app || true' // remove command
-                sh 'docker run -d -p 3000:3000 --name node-app node-app:latest' // run command
-            }
-        }
+        stage('Deploy to K8s') {
+    steps {
+        // 1. Pass the new image from Docker to Minikube
+        sh 'minikube image load node-app:latest'
+        
+        // 2. Force Kubernetes to restart the pods (picking up the new image)
+        sh 'kubectl rollout restart deployment/node-app-deployment'
+        
+        // 3. Verify it worked
+        sh 'kubectl rollout status deployment/node-app-deployment'
     }
 }
