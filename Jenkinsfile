@@ -41,15 +41,11 @@ pipeline {
 
         stage('Deploy to K8s') {
             steps {
-                // Download kubectl
-                sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
-                sh 'chmod +x kubectl'
-                
-                // FIX: Use './kubectl' to run the local binary
-                sh "./kubectl set image deployment/node-app-deployment node-app=${DOCKER_REPO}:${IMAGE_TAG}"
-                
-                // Optional: Verify rollout (also needs ./)
-                sh "./kubectl rollout status deployment/node-app-deployment"
+                script {
+                    echo "✅ CI Pipeline Complete. Image pushed: ${DOCKER_REPO}:${IMAGE_TAG}"
+                    echo "🚀 To deploy this version to your local Minikube, run this command in your WSL terminal:"
+                    echo "kubectl set image deployment/node-app-deployment node-app=${DOCKER_REPO}:${IMAGE_TAG}"
+                }
             }
         }
     }
