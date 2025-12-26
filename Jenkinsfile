@@ -41,16 +41,15 @@ pipeline {
 
         stage('Deploy to K8s') {
             steps {
-                // 6. Download kubectl (Standard Tool Installer pattern)
+                // Download kubectl
                 sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x kubectl'
                 
-                // 7. THE MAGIC TRICK: explicitly set the image to the new version
-                // This forces K8s to perform a Rolling Update because the image name changed.
-                sh "kubectl set image deployment/node-app-deployment node-app=${DOCKER_REPO}:${IMAGE_TAG}"
+                // FIX: Use './kubectl' to run the local binary
+                sh "./kubectl set image deployment/node-app-deployment node-app=${DOCKER_REPO}:${IMAGE_TAG}"
                 
-                // Optional: Verify the rollout status
-                sh "kubectl rollout status deployment/node-app-deployment"
+                // Optional: Verify rollout (also needs ./)
+                sh "./kubectl rollout status deployment/node-app-deployment"
             }
         }
     }
