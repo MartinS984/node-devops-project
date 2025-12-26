@@ -6,9 +6,9 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Express-yellow)
 
 ## 🚀 Project Overview
-This project demonstrates a fully automated **DevOps CI/CD pipeline**. It takes a Node.js application from code commit to production deployment with zero manual intervention.
+This project demonstrates a robust **DevOps CI/CD pipeline**. It takes a Node.js application from code commit to a production-ready artifact with versioning and security checks.
 
-The pipeline is designed to be **resilient** and **self-healing**, utilizing **Jenkins** for orchestration, **Docker** for consistent environments, and **Kubernetes** for high-availability deployment.
+The pipeline is designed with **security isolation** in mind: Jenkins handles the Integration (CI) and Registry logic, while Kubernetes operations are decoupled to ensure the build server does not require direct root access to the cluster.
 
 ## 🏗️ Architecture
 The pipeline follows a modern containerized workflow:
@@ -17,12 +17,13 @@ The pipeline follows a modern containerized workflow:
 2.  **Continuous Integration (Jenkins):**
     * **Poll SCM:** Jenkins detects changes automatically.
     * **Containerized Build:** A Docker agent builds the image dynamically.
-    * **Automated Testing:** Jest unit tests run inside an ephemeral container to ensure code quality before release.
-    * **Artifact Push:** Verified images are tagged and pushed to **Docker Hub**.
+    * **Automated Versioning:** Images are tagged with unique semantic versions (e.g., `v1.0.30`).
+    * **Automated Testing:** Jest unit tests run inside an ephemeral container to ensure code quality.
+    * **Artifact Push:** Verified images are pushed to **Docker Hub**.
 3.  **Continuous Deployment (Kubernetes):**
-    * The cluster pulls the new image from Docker Hub.
-    * **Rolling Update:** Kubernetes performs a zero-downtime deployment, replacing old pods with new ones incrementally.
-    * **Self-Healing:** The cluster automatically restarts failed pods to ensure 100% uptime.
+    * Jenkins calculates the new version and generates the specific deployment command.
+    * **Rolling Update:** The operator triggers the update, causing Kubernetes to perform a zero-downtime deployment.
+    * **Self-Healing:** Liveness and Readiness probes ensure traffic is only sent to healthy pods.
 
 ## 🛠️ Tech Stack
 * **Application:** Node.js (Express)
@@ -37,8 +38,8 @@ The pipeline follows a modern containerized workflow:
 | :--- | :--- | :--- |
 | **Build** | Packages the Node.js app into a lightweight Alpine-based Docker image. | ✅ |
 | **Test** | Runs `npm test` (Jest) inside the container to verify logic. | ✅ |
-| **Push** | Authenticates with Docker Hub and uploads the artifact. | ✅ |
-| **Deploy** | Triggers a rolling restart on the Kubernetes cluster to apply the new image. | ✅ |
+| **Push** | Authenticates with Docker Hub and uploads the versioned artifact. | ✅ |
+| **Deploy** | Outputs the precise `kubectl` command for the operator to execute (Security Isolation). | ✅ |
 
 ## 💻 How to Run Locally
 **Prerequisites:** Docker, Minikube, Jenkins.
@@ -53,23 +54,12 @@ The pipeline follows a modern containerized workflow:
     kubectl apply -f k8s/deployment.yaml
     kubectl apply -f k8s/service.yaml
     ```
-3.  3.  **Trigger Update (Manual):**
+3.  **Trigger Update (Manual):**
     Use the command provided by the Jenkins Console Output to update the running image.
-    ```
-    
-    
-    ## 🧹 Cleanup
+
+## 🧹 Cleanup
 To stop all services and reclaim resources:
 
 1. **Stop Kubernetes:**
-   \`\`\`bash
-   minikube delete
-   \`\`\`
-2. **Stop Jenkins:**
-   \`\`\`bash
-   docker stop jenkins-docker && docker rm jenkins-docker
-   \`\`\`
-3. **Remove Network:**
-   \`\`\`bash
-   docker network rm jenkins
-   \`\`\`
+   ```bash
+   minikube stop
