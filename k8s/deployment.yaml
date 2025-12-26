@@ -14,7 +14,21 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: node-app:latest
-        imagePullPolicy: Never
+        # CHANGE 1: Point to your Docker Hub image
+        image: martins984/node-devops-app:v1
+        # CHANGE 2: Allow K8s to check the internet for updates
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
