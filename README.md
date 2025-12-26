@@ -56,3 +56,20 @@ The pipeline follows a modern containerized workflow:
 3.  3.  **Trigger Update (Manual):**
     Use the command provided by the Jenkins Console Output to update the running image.
     ```
+    
+    
+    ## 🧹 Cleanup
+To stop all services and reclaim resources:
+
+1. **Stop Kubernetes:**
+   \`\`\`bash
+   minikube delete
+   \`\`\`
+2. **Stop Jenkins:**
+   \`\`\`bash
+   docker stop jenkins-docker && docker rm jenkins-docker
+   \`\`\`
+3. **Remove Network:**
+   \`\`\`bash
+   docker network rm jenkins
+   \`\`\`
