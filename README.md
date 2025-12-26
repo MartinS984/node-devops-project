@@ -53,7 +53,6 @@ The pipeline follows a modern containerized workflow:
     kubectl apply -f k8s/deployment.yaml
     kubectl apply -f k8s/service.yaml
     ```
-3.  **Access the App:**
-    ```bash
-    minikube service node-app-service
+3.  3.  **Trigger Update (Manual):**
+    Use the command provided by the Jenkins Console Output to update the running image.
     ```
