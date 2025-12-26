@@ -63,3 +63,32 @@ To stop all services and reclaim resources:
 1. **Stop Kubernetes:**
    ```bash
    minikube stop
+
+   ## 📊 Observability & Monitoring
+
+This project uses **Prometheus** for metrics collection and **Grafana** for visualization, installed via the Kube-Prometheus-Stack.
+
+### 1. Accessing the Dashboard
+To access the Grafana dashboard, run the following command to open a tunnel:
+
+\`\`\`bash
+kubectl port-forward svc/monitoring-grafana 8080:80
+\`\`\`
+
+- **URL:** [http://localhost:8080](http://localhost:8080)
+- **Default User:** `admin`
+- **Default Password:** `prom-operator`
+
+### 2. Stress Testing (Generating Traffic)
+To verify that CPU limits and autoscaling are working, use a temporary load generator to flood the application with traffic:
+
+\`\`\`bash
+# Launch a "Hacker" pod to stress test the app
+kubectl run load-generator --image=busybox --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://node-app-service; done"
+
+# Watch the CPU usage spike
+kubectl top pods
+
+# Stop the test
+kubectl delete pod load-generator
+\`\`\`
