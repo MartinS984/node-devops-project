@@ -26,9 +26,9 @@ pipeline {
             steps {
                 echo 'Running Unit Tests inside the container...'
                 script {
-                    // We run the 'npm test' command inside our custom Docker image
-                    // The --rm flag deletes the container automatically after the test finishes
-                    docker.image(DOCKER_IMAGE).run('npm test') 
+                    // We use 'sh' to run the standard Docker command explicitly.
+                    // --rm: Removes the container automatically after the test finishes.
+                    sh "docker run --rm ${DOCKER_IMAGE} npm test" 
                 }
             }
         }
