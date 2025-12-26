@@ -15,11 +15,22 @@ spec:
       containers:
       - name: node-app
         # CHANGE 1: Point to your Docker Hub image
-        image: martins984/node-devops-app:v1
+        image: martins984/node-devops-app:latest
         # CHANGE 2: Allow K8s to check the internet for updates
         imagePullPolicy: Always
+        resources:
+            requests:
+              memory: "64Mi"   # Minimum RAM needed
+              cpu: "100m"      # Minimum CPU (10% of a core)
+            limits:
+              memory: "128Mi"  # Maximum RAM allowed
+              cpu: "200m"      # Maximum CPU allowed
         ports:
         - containerPort: 3000
+        securityContext:
+            runAsUser: 1000   # The ID for the 'node' user
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
         livenessProbe:
           httpGet:
             path: /
