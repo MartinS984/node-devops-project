@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: node-app
-        image: martins984/node-devops-app:v1
+        image: node-app:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
