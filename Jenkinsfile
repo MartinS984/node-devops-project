@@ -22,9 +22,14 @@ pipeline {
             }
         }
 
-        stage('Test') {
+       stage('Test') {
             steps {
-                sh 'echo "Tests passed!"'
+                echo 'Running Unit Tests inside the container...'
+                script {
+                    // We run the 'npm test' command inside our custom Docker image
+                    // The --rm flag deletes the container automatically after the test finishes
+                    docker.image(DOCKER_IMAGE).run('npm test') 
+                }
             }
         }
 
