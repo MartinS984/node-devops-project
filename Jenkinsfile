@@ -2,9 +2,13 @@ pipeline {
     agent any
 
     environment {
-        // Define your image name clearly here
-        DOCKER_IMAGE = 'martins984/node-devops-app:v1'
+        // 1. We separate the Repo Name from the Tag
+        DOCKER_REPO = 'martins984/node-devops-app'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        
+        // 2. Create a dynamic tag using the Jenkins BUILD_NUMBER
+        // Result will look like: v1.0.23, v1.0.24, etc.
+        IMAGE_TAG = "v1.0.${BUILD_NUMBER}"
     }
 
     stages {
@@ -12,36 +16,41 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-                        // 1. Build the image
-                        def customImage = docker.build(DOCKER_IMAGE)
+                        // 3. Build with the specific version tag
+                        def customImage = docker.build("${DOCKER_REPO}:${IMAGE_TAG}")
                         
-                        // 2. Push to Docker Hub
+                        // 4. Push the versioned tag (e.g., v1.0.24)
                         customImage.push()
+                        
+                        // 5. Also push 'latest' so people can easily pull the newest one
+                        customImage.push('latest')
                     }
                 }
             }
         }
 
-       stage('Test') {
+        stage('Test') {
             steps {
                 echo 'Running Unit Tests inside the container...'
                 script {
-                    // We use 'sh' to run the standard Docker command explicitly.
-                    // --rm: Removes the container automatically after the test finishes.
-                    sh "docker run --rm ${DOCKER_IMAGE} npm test" 
+                   // Test the specific version we just built
+                   sh "docker run --rm ${DOCKER_REPO}:${IMAGE_TAG} npm test" 
                 }
             }
         }
 
         stage('Deploy to K8s') {
             steps {
-                // 1. Download kubectl inside the container (The "Tool Installer" pattern)
+                // 6. Download kubectl (Standard Tool Installer pattern)
                 sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x kubectl'
                 
-                // Note: Connecting Jenkins to Minikube is tricky. 
-                // For this step, we will try a simple remote trigger or skip it for now.
-                echo 'Image successfully pushed to Docker Hub! K8s will pull it on next restart.'
+                // 7. THE MAGIC TRICK: explicitly set the image to the new version
+                // This forces K8s to perform a Rolling Update because the image name changed.
+                sh "kubectl set image deployment/node-app-deployment node-app=${DOCKER_REPO}:${IMAGE_TAG}"
+                
+                // Optional: Verify the rollout status
+                sh "kubectl rollout status deployment/node-app-deployment"
             }
         }
     }
