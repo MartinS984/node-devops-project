@@ -63,6 +63,7 @@ To stop all services and reclaim resources:
 1. **Stop Kubernetes:**
    ```bash
    minikube stop
+   ```
 
    ## 📊 Observability & Monitoring
 
@@ -91,4 +92,64 @@ kubectl top pods
 
 # Stop the test
 kubectl delete pod load-generator
+\`\`\`
+
+## 🐙 GitOps (ArgoCD)
+
+This project uses **ArgoCD** to automate deployments. Instead of running `kubectl apply` manually, ArgoCD watches the GitHub repository and syncs changes to the cluster automatically.
+
+### 1. Installation
+The ArgoCD infrastructure runs in the `argocd` namespace:
+
+\`\`\`bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f [https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml](https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml)
+\`\`\`
+
+### 2. Accessing ArgoCD
+ArgoCD is secure by default. You need to retrieve the initial password and forward the port to access the UI.
+
+**Get the Password:**
+\`\`\`bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+\`\`\`
+
+**Open the UI:**
+\`\`\`bash
+kubectl port-forward svc/argocd-server -n argocd 8085:443
+\`\`\`
+
+- **URL:** [https://localhost:8085](https://localhost:8085)
+- **User:** `admin`
+- **Password:** (Use the output from the password command above)
+- **Note:** You will see a "Privacy Warning" in the browser because ArgoCD uses a self-signed certificate. Click "Advanced" -> "Proceed" to bypass it.
+
+### 3. Defining the Application (GitOps)
+Instead of manually deploying with `kubectl`, we define an **ArgoCD Application** that points to this repository.
+
+**Create the App Manifest (`argocd-app.yaml`):**
+\`\`\`yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: node-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MartinS984/node-devops-project
+    targetRevision: main
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+\`\`\`
+
+**Apply it:**
+\`\`\`bash
+kubectl apply -f argocd-app.yaml
 \`\`\`
