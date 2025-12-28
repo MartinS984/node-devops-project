@@ -98,16 +98,23 @@ kubectl delete pod load-generator
 
 This project uses **ArgoCD** to automate deployments. Instead of running `kubectl apply` manually, ArgoCD watches the GitHub repository and syncs changes to the cluster automatically.
 
-### 1. Installation
-The ArgoCD infrastructure runs in the `argocd` namespace:
+### 1. Installation & Configuration
+We install ArgoCD and patch it to run in "Insecure Mode." This effectively disables the strict HTTPS requirement, allowing it to work seamlessly behind our local NGINX Ingress.
 
 \`\`\`bash
+# 1. Install ArgoCD
 kubectl create namespace argocd
-kubectl apply -n argocd -f [https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml](https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml)
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# 2. Wait for the server to be ready
+kubectl get pods -n argocd --watch
+
+# 3. Patch Server to allow HTTP connections (Required for local Ingress)
+kubectl patch deployment argocd-server -n argocd --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["argocd-server", "--staticassets", "/shared/app", "--insecure"]}]'
 \`\`\`
 
 ### 2. Accessing ArgoCD
-ArgoCD is secure by default. You need to retrieve the initial password and forward the port to access the UI.
+We access the UI through the Ingress Gateway (port 8080) rather than a direct port forward.
 
 **Get the Password:**
 \`\`\`bash
@@ -115,14 +122,10 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 \`\`\`
 
 **Open the UI:**
-\`\`\`bash
-kubectl port-forward svc/argocd-server -n argocd 8085:443
-\`\`\`
-
-- **URL:** [https://localhost:8085](https://localhost:8085)
+Ensure your Ingress Gateway is running (`kubectl port-forward ...` from the Networking section), then visit:
+- **URL:** [http://argocd.127.0.0.1.nip.io:8080](http://argocd.127.0.0.1.nip.io:8080)
 - **User:** `admin`
-- **Password:** (Use the output from the password command above)
-- **Note:** You will see a "Privacy Warning" in the browser because ArgoCD uses a self-signed certificate. Click "Advanced" -> "Proceed" to bypass it.
+- **Password:** (Use the output from the command above)
 
 ### 3. Defining the Application (GitOps)
 Instead of manually deploying with `kubectl`, we define an **ArgoCD Application** that points to this repository.
