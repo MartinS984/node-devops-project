@@ -156,3 +156,35 @@ spec:
 \`\`\`bash
 kubectl apply -f argocd-app.yaml
 \`\`\`
+
+## 🚀 How to Run the Project (Daily Workflow)
+Because this is a local environment, the network bridge (Gateway) stops when you close the terminal or restart your computer. Follow these steps to bring everything back online.
+
+### 1. Start the Cluster
+Ensure Minikube is running:
+\`\`\`bash
+minikube start
+\`\`\`
+
+### 2. Open the Network Gateway ⚠️ (Crucial Step)
+You must run this command in a **separate terminal** and keep it open. This bridges your Windows browser to the Linux cluster.
+
+\`\`\`bash
+kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80 --address 0.0.0.0
+\`\`\`
+> **Note:** Do not close this terminal. If you see `Forwarding from 0.0.0.0:8080`, it is working.
+
+### 3. Access the Dashboard
+Once the gateway is running, use these specific links:
+
+| Service | Status | URL |
+| :--- | :--- | :--- |
+| **Node App** | 🟢 Public | [http://node-app.127.0.0.1.nip.io:8080](http://node-app.127.0.0.1.nip.io:8080) |
+| **Grafana** | 🔐 Admin | [http://grafana.127.0.0.1.nip.io:8080](http://grafana.127.0.0.1.nip.io:8080) |
+| **ArgoCD** | 🔐 Admin | [http://argocd.127.0.0.1.nip.io:8080](http://argocd.127.0.0.1.nip.io:8080) |
+
+### 4. Deploying Changes (GitOps)
+You do not need to run `kubectl apply` anymore.
+1.  **Commit & Push** changes to your GitHub repository.
+2.  ArgoCD will detect the change (within 3 minutes) and auto-sync.
+3.  **Force Sync:** If you want it instantly, click "Refresh" -> "Sync" in the ArgoCD UI.
